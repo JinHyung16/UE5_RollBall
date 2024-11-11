@@ -1,0 +1,8 @@
+{
+	"SourceFiles": [
+		"C:\\JinHyung_Programming\\GameProject\\UE5_RollBall\\JH_RollBall\\Source\\JH_RollBall\\JH_RollBall.Build.cs",
+		"C:\\JinHyung_Programming\\GameProject\\UE5_RollBall\\JH_RollBall\\Source\\JH_RollBall.Target.cs",
+		"C:\\JinHyung_Programming\\GameProject\\UE5_RollBall\\JH_RollBall\\Source\\JH_RollBallEditor.Target.cs"
+	],
+	"EngineVersion": "5.4.4"
+}

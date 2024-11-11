@@ -1,0 +1,19 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\jinhyung_programming\\gameproject\\ue5_rollball\\jh_rollball\\source\\jh_rollball\\rollballplayer.cpp",
+        "ProvidedModule": "",
+        "PCH": "c:\\jinhyung_programming\\gameproject\\ue5_rollball\\jh_rollball\\intermediate\\build\\win64\\x64\\jh_rollballeditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.cpp20.inclorderoldest.h.pch",
+        "Includes": [
+            "c:\\jinhyung_programming\\gameproject\\ue5_rollball\\jh_rollball\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\jh_rollball\\definitions.jh_rollball.h",
+            "c:\\jinhyung_programming\\gameproject\\ue5_rollball\\jh_rollball\\source\\jh_rollball\\rollballplayer.h",
+            "c:\\jinhyung_programming\\gameproject\\ue5_rollball\\jh_rollball\\intermediate\\build\\win64\\unrealeditor\\inc\\jh_rollball\\uht\\rollballplayer.generated.h",
+            "c:\\program files\\epic games\\ue_5.4\\engine\\source\\runtime\\engine\\classes\\gameframework\\springarmcomponent.h",
+            "c:\\program files\\epic games\\ue_5.4\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\engine\\uht\\springarmcomponent.generated.h",
+            "c:\\program files\\epic games\\ue_5.4\\engine\\source\\runtime\\engine\\classes\\camera\\cameracomponent.h",
+            "c:\\program files\\epic games\\ue_5.4\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\engine\\uht\\cameracomponent.generated.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

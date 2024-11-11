@@ -1,0 +1,14 @@
+{
+	"Targets": [
+		{
+			"Name": "JH_RollBall",
+			"Path": "..\\Source\\JH_RollBall.Target.cs",
+			"Type": "Game"
+		},
+		{
+			"Name": "JH_RollBallEditor",
+			"Path": "..\\Source\\JH_RollBallEditor.Target.cs",
+			"Type": "Editor"
+		}
+	]
+}

@@ -1,0 +1,13 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\jinhyung_programming\\gameproject\\ue5_rollball\\jh_rollball\\intermediate\\build\\win64\\unrealeditor\\inc\\jh_rollball\\uht\\jh_rollball.init.gen.cpp",
+        "ProvidedModule": "",
+        "PCH": "c:\\jinhyung_programming\\gameproject\\ue5_rollball\\jh_rollball\\intermediate\\build\\win64\\x64\\jh_rollballeditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.cpp20.inclorderoldest.h.pch",
+        "Includes": [
+            "c:\\jinhyung_programming\\gameproject\\ue5_rollball\\jh_rollball\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\jh_rollball\\definitions.jh_rollball.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

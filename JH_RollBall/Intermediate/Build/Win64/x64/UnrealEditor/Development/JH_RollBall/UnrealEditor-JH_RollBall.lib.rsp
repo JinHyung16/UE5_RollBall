@@ -1,0 +1,15 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-JH_RollBall.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"C:\JinHyung_Programming\GameProject\UE5_RollBall\JH_RollBall\Intermediate\Build\Win64\x64\JH_RollBallEditor\Development\UnrealEd\SharedPCH.UnrealEd.Project.ValApi.Cpp20.InclOrderOldest.h.obj"
+"C:\JinHyung_Programming\GameProject\UE5_RollBall\JH_RollBall\Intermediate\Build\Win64\x64\UnrealEditor\Development\JH_RollBall\JH_RollBall.init.gen.cpp.obj"
+"C:\JinHyung_Programming\GameProject\UE5_RollBall\JH_RollBall\Intermediate\Build\Win64\x64\UnrealEditor\Development\JH_RollBall\RollBallPlayer.gen.cpp.obj"
+"C:\JinHyung_Programming\GameProject\UE5_RollBall\JH_RollBall\Intermediate\Build\Win64\x64\UnrealEditor\Development\JH_RollBall\JH_RollBall.cpp.obj"
+"C:\JinHyung_Programming\GameProject\UE5_RollBall\JH_RollBall\Intermediate\Build\Win64\x64\UnrealEditor\Development\JH_RollBall\RollBallPlayer.cpp.obj"
+"C:\JinHyung_Programming\GameProject\UE5_RollBall\JH_RollBall\Intermediate\Build\Win64\x64\UnrealEditor\Development\JH_RollBall\Default.rc2.res"
+/OUT:"C:\JinHyung_Programming\GameProject\UE5_RollBall\JH_RollBall\Intermediate\Build\Win64\x64\UnrealEditor\Development\JH_RollBall\UnrealEditor-JH_RollBall.lib"
