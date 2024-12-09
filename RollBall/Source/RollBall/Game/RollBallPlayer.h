@@ -23,19 +23,19 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* Mesh;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USpringArmComponent* SpringArm;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UCameraComponent* Camera;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float MoveForce = 500.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float JumpImpulse = 1000.0f;
+	float JumpImpulse = 500.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 MaxJumpCount = 1;
 
@@ -49,9 +49,10 @@ public:
 
 private:
 
+	int32 JumpCount = 0;
+
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void Jump();
-
-	int32 JumpCount = 0;
+	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 };

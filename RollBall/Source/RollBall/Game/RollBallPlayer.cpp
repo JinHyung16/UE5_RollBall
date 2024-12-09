@@ -9,7 +9,7 @@
 ARollBallPlayer::ARollBallPlayer()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
@@ -18,13 +18,19 @@ ARollBallPlayer::ARollBallPlayer()
 	RootComponent = Mesh;
 	SpringArm->SetupAttachment(Mesh);
 	Camera->SetupAttachment(SpringArm);
+
+	Mesh->SetSimulatePhysics(true);
+
+	Mesh->OnComponentHit.AddDynamic(this, &ARollBallPlayer::OnHit);
 }
 
 // Called when the game starts or when spawned
 void ARollBallPlayer::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	MoveForce *= Mesh->GetMass();
+	JumpImpulse *= Mesh->GetMass();
 }
 
 // Called every frame
@@ -60,6 +66,17 @@ void ARollBallPlayer::MoveRight(float Value)
 
 void ARollBallPlayer::Jump()
 {
+	if (MaxJumpCount <= JumpCount)
+		return;
+
 	Mesh->AddImpulse(FVector(0, 0, JumpImpulse));
+	JumpCount++;
+}
+
+void ARollBallPlayer::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	const float HitDirection = Hit.Normal.Z;
+	if (0 < HitDirection)
+		JumpCount = 0;
 }
 
