@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -6,6 +5,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "RollBallGameModeBase.generated.h"
 
+class URollBallWidget;
 /**
  * 
  */
@@ -18,6 +18,14 @@ protected:
 
 	int32 ItemsCollected = 0;
 	int32 ItemsInLevel = 0;
+
+
+	// Implement Widget Variables
+	UPROPERTY(EditAnywhere, Category = "Widgets")
+	TSubclassOf<class UUserWidget> GameWidgetClass;
+
+	UPROPERTY()
+	URollBallWidget* GameWidget;
 
 	virtual void BeginPlay() override;
 
