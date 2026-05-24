@@ -1,0 +1,4 @@
+Name,LevelName,RequiredItemCount,TimeLimitSeconds,DisplayName
+Stage_01,L_Stage_01,5,30,"Stage 1"
+Stage_02,L_Stage_02,8,45,"Stage 2 — Slopes"
+Stage_03,L_Stage_03,12,60,"Stage 3 — Jump"
