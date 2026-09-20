@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -11,21 +9,19 @@ class ROLLBALL_API ARollBallItemBase : public AActor
 {
 	GENERATED_BODY()
 
+public:
 
-public:	
-	// Sets default values for this actor's properties
 	ARollBallItemBase();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
 
+	virtual void BeginPlay() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* Mesh;
 
-public:	
-	// Called every frame
+public:
+
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION()

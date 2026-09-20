@@ -1,26 +1,34 @@
 {
-	"FileVersion": 3,
-	"EngineAssociation": "5.7",
-	"Category": "",
-	"Description": "",
-	"Modules": [
-		{
-			"Name": "RollBall",
-			"Type": "Runtime",
-			"LoadingPhase": "Default",
-			"AdditionalDependencies": [
-				"Engine",
-				"UMG"
-			]
-		}
-	],
-	"Plugins": [
-		{
-			"Name": "ModelingToolsEditorMode",
-			"Enabled": true,
-			"TargetAllowList": [
-				"Editor"
-			]
-		}
-	]
+ "FileVersion": 3,
+ "EngineAssociation": "5.7",
+ "Category": "",
+ "Description": "",
+ "Modules": [
+  {
+   "Name": "RollBall",
+   "Type": "Runtime",
+   "LoadingPhase": "Default",
+   "AdditionalDependencies": [
+    "Engine",
+    "UMG"
+   ]
+  }
+ ],
+ "Plugins": [
+  {
+   "Name": "ModelingToolsEditorMode",
+   "Enabled": true,
+   "TargetAllowList": [
+    "Editor"
+   ]
+  },
+  {
+   "Name": "PythonScriptPlugin",
+   "Enabled": true
+  },
+  {
+   "Name": "EditorScriptingUtilities",
+   "Enabled": true
+  }
+ ]
 }

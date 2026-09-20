@@ -3,26 +3,34 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "RollBallGameModeBase.h"
+#include "RollBall/Stage/RollBallStageTypes.h"
 #include "RollBallWidget.generated.h"
 
-// HUD + Result widget. The Blueprint subclass implements all three events
-// (no extra rooms; same widget owns the in-game HUD and the result overlay,
-// which keeps button wiring simple — the result panel just toggles on top).
 UCLASS()
 class ROLLBALL_API URollBallWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
 public:
-	// Update the "X / Y" item counter.
-	UFUNCTION(BlueprintImplementableEvent, Category = "RollBall|HUD")
-	void SetItemText(int32 ItemsCollected, int32 ItemsInLevel);
 
-	// Update the countdown timer (seconds remaining; <=0 means time's up).
-	UFUNCTION(BlueprintImplementableEvent, Category = "RollBall|HUD")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "RollBall|HUD")
 	void SetTimeText(float RemainingSeconds);
 
-	// Show the Win or Lose panel with its buttons.
-	UFUNCTION(BlueprintImplementableEvent, Category = "RollBall|Result")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "RollBall|HUD")
+	void SetStageText(int32 StageNumber, bool bBossStage);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "RollBall|HUD")
+	void SetHealth(int32 Health, int32 MaxHealth);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "RollBall|HUD")
+	void SetGoldText(int32 GoldEarned, int32 KillCount);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "RollBall|HUD")
+	void SetPhase(ERollBallStagePhase Phase);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "RollBall|Result")
+	void SetResultSummary(ERollBallStageResult Result, int32 KillCount, int32 GoldEarned);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "RollBall|Result")
 	void ShowResult(ERollBallStageResult Result);
 };

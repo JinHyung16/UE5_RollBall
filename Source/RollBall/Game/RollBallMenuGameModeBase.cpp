@@ -7,6 +7,8 @@
 ARollBallMenuGameModeBase::ARollBallMenuGameModeBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
+
+	MenuWidgetClass = URollBallMenuWidget::StaticClass();
 }
 
 void ARollBallMenuGameModeBase::BeginPlay()
@@ -38,6 +40,5 @@ void ARollBallMenuGameModeBase::StartGame(const FString& Nickname)
 	}
 
 	GI->PlayerNickname = Nickname;
-	GI->StartFromFirstStage();
-	GI->OpenCurrentStageLevel();
+	GI->TravelToStage(1);
 }
