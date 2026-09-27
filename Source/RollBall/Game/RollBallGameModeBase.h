@@ -112,6 +112,17 @@ protected:
 	TArray<ARollBallEnemy*> AliveEnemies;
 
 	UPROPERTY()
+	TArray<ARollBallEnemy*> Pool;
+
+	UPROPERTY()
+	TArray<ARollBallEnemy*> AllEnemies;
+
+	UPROPERTY(EditAnywhere, Category = "RollBall|Spawning", meta = (ClampMin = "0"))
+	int32 PoolPrewarmCount = 80;
+
+	int32 PoolMisses = 0;
+
+	UPROPERTY()
 	class ARollBallArena* Arena = nullptr;
 
 	FTimerHandle ClockHandle;
@@ -130,6 +141,11 @@ protected:
 	bool FindSpawnLocation(ERollBallEnemyKind Kind, const ARollBallPlayer* Player, FVector& OutLocation) const;
 
 	void CullDistantEnemies();
+
+	ARollBallEnemy* CreatePooledEnemy();
+	ARollBallEnemy* AcquireEnemy();
+	void ReleaseEnemy(ARollBallEnemy* Enemy);
+	void PrewarmPool();
 
 	void BuildArenaIfMissing();
 

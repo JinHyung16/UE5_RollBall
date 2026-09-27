@@ -9,18 +9,6 @@
 
 namespace
 {
-
-	const TCHAR* MeshPathOf(ERollBallEnemyKind Kind)
-	{
-		switch (Kind)
-		{
-		case ERollBallEnemyKind::Roller:  return TEXT("/Engine/BasicShapes/Sphere.Sphere");
-		case ERollBallEnemyKind::Blocker: return TEXT("/Engine/BasicShapes/Cube.Cube");
-		case ERollBallEnemyKind::Meteor:  return TEXT("/Engine/BasicShapes/Cone.Cone");
-		default:                          return TEXT("/Engine/BasicShapes/Cylinder.Cylinder");
-		}
-	}
-
 	FLinearColor ColorOf(ERollBallEnemyKind Kind)
 	{
 		switch (Kind)
@@ -31,30 +19,35 @@ namespace
 		default:                          return FLinearColor(0.90f, 0.25f, 0.30f);
 		}
 	}
+
+	const FVector ParkedLocation(0.0f, 0.0f, -100000.0f);
 }
 
 ARollBallEnemy::ARollBallEnemy()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = Mesh;
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultMesh(
-		TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
-	if (DefaultMesh.Succeeded())
-	{
-		Mesh->SetStaticMesh(DefaultMesh.Object);
-	}
-
-	static ConstructorHelpers::FObjectFinder<UMaterial> DefaultMaterial(
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cylinder(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Sphere(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cube(TEXT("/Engine/BasicShapes/Cube.Cube"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Cone(TEXT("/Engine/BasicShapes/Cone.Cone"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Basic(
 		TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
-	if (DefaultMaterial.Succeeded())
-	{
-		Mesh->SetMaterial(0, DefaultMaterial.Object);
-	}
 
-	Mesh->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+	KindMeshes.SetNum(4);
+	KindMeshes[static_cast<int32>(ERollBallEnemyKind::Chaser)] = Cylinder.Object;
+	KindMeshes[static_cast<int32>(ERollBallEnemyKind::Roller)] = Sphere.Object;
+	KindMeshes[static_cast<int32>(ERollBallEnemyKind::Blocker)] = Cube.Object;
+	KindMeshes[static_cast<int32>(ERollBallEnemyKind::Meteor)] = Cone.Object;
+	BaseMaterial = Basic.Object;
+
+	Mesh->SetStaticMesh(Cylinder.Object);
+	Mesh->SetMaterial(0, BaseMaterial);
+	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Mesh->SetGenerateOverlapEvents(true);
 }
 
@@ -65,18 +58,62 @@ void ARollBallEnemy::BeginPlay()
 	Mesh->OnComponentBeginOverlap.AddDynamic(this, &ARollBallEnemy::OnOverlap);
 	Mesh->OnComponentHit.AddDynamic(this, &ARollBallEnemy::OnHit);
 
-	if (MeshMaterial == nullptr)
+	Mesh->SetMaterial(0, BaseMaterial);
+	MeshMaterial = Mesh->CreateAndSetMaterialInstanceDynamic(0);
+
+	if (bAutoActivate && !bActive)
 	{
-		ConfigureForKind(1.0f);
+		Activate(Kind, 1.0f, 1.0f, GoldReward, 1.0f, GetActorLocation());
 	}
 }
 
-void ARollBallEnemy::Setup(ERollBallEnemyKind InKind, float HealthScale, float SpeedScale,
-	int32 InGoldReward, float SizeScale)
+void ARollBallEnemy::Activate(ERollBallEnemyKind InKind, float HealthScale, float SpeedScale,
+	int32 InGoldReward, float SizeScale, const FVector& Location)
 {
 	Kind = InKind;
 	GoldReward = FMath::Max(0, InGoldReward);
+	bDying = false;
 
+	ApplyStatsForKind(HealthScale, SpeedScale);
+
+	Mesh->SetSimulatePhysics(false);
+	SetActorLocationAndRotation(Location, FRotator::ZeroRotator, false, nullptr, ETeleportType::ResetPhysics);
+
+	ApplyShapeForKind(SizeScale);
+	ApplyCollisionForKind();
+
+	if (Kind == ERollBallEnemyKind::Meteor)
+	{
+		MeteorTargetZ = Location;
+		MeteorTargetZ.Z -= MeteorDropHeight;
+	}
+
+	SetActorHiddenInGame(false);
+	SetActorTickEnabled(true);
+	bActive = true;
+}
+
+void ARollBallEnemy::Deactivate()
+{
+	bActive = false;
+	bDying = true;
+
+	SetActorTickEnabled(false);
+	SetActorHiddenInGame(true);
+
+	if (Mesh->IsSimulatingPhysics())
+	{
+		Mesh->SetPhysicsLinearVelocity(FVector::ZeroVector);
+		Mesh->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+		Mesh->SetSimulatePhysics(false);
+	}
+
+	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SetActorLocation(ParkedLocation, false, nullptr, ETeleportType::ResetPhysics);
+}
+
+void ARollBallEnemy::ApplyStatsForKind(float HealthScale, float SpeedScale)
+{
 	switch (Kind)
 	{
 	case ERollBallEnemyKind::Chaser:
@@ -88,7 +125,6 @@ void ARollBallEnemy::Setup(ERollBallEnemyKind InKind, float HealthScale, float S
 	case ERollBallEnemyKind::Roller:
 		MaxHealth = 6.0f;
 		MoveSpeed = 700.0f;
-
 		ContactDamage = 0;
 		break;
 
@@ -108,62 +144,54 @@ void ARollBallEnemy::Setup(ERollBallEnemyKind InKind, float HealthScale, float S
 	MaxHealth *= FMath::Max(0.01f, HealthScale);
 	MoveSpeed *= FMath::Max(0.01f, SpeedScale);
 	Health = MaxHealth;
-
-	ConfigureForKind(SizeScale);
-
-	if (Kind == ERollBallEnemyKind::Meteor)
-	{
-
-		MeteorTargetZ = GetActorLocation();
-		MeteorTargetZ.Z -= MeteorDropHeight;
-	}
 }
 
-void ARollBallEnemy::ConfigureForKind(float SizeScale)
+void ARollBallEnemy::ApplyShapeForKind(float SizeScale)
 {
-	if (UStaticMesh* Shape = LoadObject<UStaticMesh>(nullptr, MeshPathOf(Kind)))
+	if (!bHasShape || ShapeKind != Kind)
 	{
-		Mesh->SetStaticMesh(Shape);
+		const int32 Index = static_cast<int32>(Kind);
+		if (KindMeshes.IsValidIndex(Index) && KindMeshes[Index] != nullptr)
+		{
+			Mesh->SetStaticMesh(KindMeshes[Index]);
+		}
+
+		if (MeshMaterial != nullptr)
+		{
+			Mesh->SetMaterial(0, MeshMaterial);
+		}
+
+		ShapeKind = Kind;
+		bHasShape = true;
 	}
 
-	if (UMaterialInterface* Base = LoadObject<UMaterialInterface>(nullptr,
-		TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial")))
-	{
-		Mesh->SetMaterial(0, Base);
-	}
-
-	MeshMaterial = Mesh->CreateAndSetMaterialInstanceDynamic(0);
 	if (MeshMaterial != nullptr)
 	{
 		MeshMaterial->SetVectorParameterValue(TEXT("Color"), ColorOf(Kind));
 	}
 
 	SetActorScale3D(FVector(FMath::Max(0.1f, SizeScale)));
+}
 
+void ARollBallEnemy::ApplyCollisionForKind()
+{
 	switch (Kind)
 	{
 	case ERollBallEnemyKind::Roller:
-
 		Mesh->SetCollisionProfileName(TEXT("PhysicsActor"));
-		Mesh->SetSimulatePhysics(true);
 		Mesh->SetNotifyRigidBodyCollision(true);
+		Mesh->SetSimulatePhysics(true);
 		break;
 
 	case ERollBallEnemyKind::Blocker:
-
-		Mesh->SetSimulatePhysics(false);
 		Mesh->SetCollisionProfileName(TEXT("BlockAll"));
 		break;
 
 	case ERollBallEnemyKind::Meteor:
-
-		Mesh->SetSimulatePhysics(false);
 		Mesh->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 		break;
 
 	default:
-
-		Mesh->SetSimulatePhysics(false);
 		Mesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		Mesh->SetCollisionObjectType(ECC_WorldDynamic);
 		Mesh->SetCollisionResponseToAllChannels(ECR_Overlap);
@@ -178,17 +206,16 @@ void ARollBallEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bDying)
+	if (!bActive || bDying)
 	{
 		return;
 	}
-
-	ARollBallPlayer* Player = FindPlayer();
 
 	switch (Kind)
 	{
 	case ERollBallEnemyKind::Chaser:
 	{
+		const ARollBallPlayer* Player = FindPlayer();
 		if (Player == nullptr)
 		{
 			break;
@@ -199,7 +226,6 @@ void ARollBallEnemy::Tick(float DeltaTime)
 
 		if (Flat.SizeSquared() > 1.0f)
 		{
-
 			AddActorWorldOffset(Flat.GetSafeNormal() * MoveSpeed * DeltaTime, true);
 			SetActorRotation(Flat.Rotation());
 		}
@@ -208,6 +234,7 @@ void ARollBallEnemy::Tick(float DeltaTime)
 
 	case ERollBallEnemyKind::Roller:
 	{
+		const ARollBallPlayer* Player = FindPlayer();
 		if (Player == nullptr)
 		{
 			break;
@@ -231,7 +258,6 @@ void ARollBallEnemy::Tick(float DeltaTime)
 
 		if (Location.Z <= MeteorTargetZ.Z)
 		{
-
 			Die(nullptr);
 		}
 		break;
@@ -244,7 +270,7 @@ void ARollBallEnemy::Tick(float DeltaTime)
 
 bool ARollBallEnemy::ApplyWeaponDamage(float Amount, AActor* Causer)
 {
-	if (bDying || Amount <= 0.0f)
+	if (!bActive || bDying || Amount <= 0.0f)
 	{
 		return false;
 	}
@@ -270,19 +296,18 @@ void ARollBallEnemy::Die(AActor* Causer)
 	const int32 Payout = (Causer != nullptr) ? GoldReward : 0;
 
 	OnDied.Broadcast(this, Payout);
-	Destroy();
+	Deactivate();
 }
 
 void ARollBallEnemy::TouchPlayer(ARollBallPlayer* Player, const FVector& FromDirection)
 {
-	if (Player == nullptr || bDying)
+	if (Player == nullptr || !bActive || bDying)
 	{
 		return;
 	}
 
 	if (Kind == ERollBallEnemyKind::Roller)
 	{
-
 		Player->ApplyKnockback(FromDirection * PushImpulse);
 		return;
 	}
@@ -294,7 +319,6 @@ void ARollBallEnemy::TouchPlayer(ARollBallPlayer* Player, const FVector& FromDir
 
 	if (Kind == ERollBallEnemyKind::Meteor)
 	{
-
 		Die(nullptr);
 	}
 }
@@ -319,7 +343,11 @@ void ARollBallEnemy::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor
 	}
 }
 
-ARollBallPlayer* ARollBallEnemy::FindPlayer() const
+ARollBallPlayer* ARollBallEnemy::FindPlayer()
 {
-	return Cast<ARollBallPlayer>(UGameplayStatics::GetPlayerPawn(this, 0));
+	if (!CachedPlayer.IsValid())
+	{
+		CachedPlayer = Cast<ARollBallPlayer>(UGameplayStatics::GetPlayerPawn(this, 0));
+	}
+	return CachedPlayer.Get();
 }

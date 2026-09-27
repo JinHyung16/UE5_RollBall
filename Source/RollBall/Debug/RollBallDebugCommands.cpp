@@ -142,6 +142,27 @@ namespace
 			Stats.IsUnlocked(ERollBallSkillStat::DrillUnlock) ? TEXT("장착") : TEXT("잠김"));
 	}
 
+	void KeepEditorAwake(const TArray<FString>& Args, UWorld* World)
+	{
+#if WITH_EDITOR
+		const bool bThrottle = Args.Num() > 0 && FCString::Atoi(*Args[0]) != 0;
+
+		GConfig->SetBool(
+			TEXT("/Script/UnrealEd.EditorPerformanceSettings"),
+			TEXT("bThrottleCPUWhenNotForeground"),
+			bThrottle,
+			GEditorSettingsIni);
+		GConfig->Flush(false, GEditorSettingsIni);
+
+		UE_LOG(LogRollBallDebug, Log, TEXT("에디터 백그라운드 절약 %s, 저장함"), bThrottle ? TEXT("켬") : TEXT("끔"));
+#endif
+	}
+
+	FAutoConsoleCommandWithWorldAndArgs KeepEditorAwakeCommand(
+		TEXT("rollball.EditorThrottle"),
+		TEXT("에디터가 뒤에 있을 때 느려지는 설정을 파일에 저장한다. 0 이면 끔."),
+		FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&KeepEditorAwake));
+
 	FAutoConsoleCommandWithWorldAndArgs AddGoldCommand(
 		TEXT("rollball.AddGold"),
 		TEXT("테스트용 골드 지급. rollball.AddGold 5000"),

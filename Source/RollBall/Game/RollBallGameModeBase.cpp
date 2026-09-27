@@ -53,6 +53,7 @@ void ARollBallGameModeBase::BeginPlay()
 	Phase = ERollBallStagePhase::Normal;
 
 	BuildArenaIfMissing();
+	PrewarmPool();
 
 	if (ARollBallPlayer* Player = GetBallPlayer())
 	{
@@ -88,13 +89,15 @@ void ARollBallGameModeBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		Player->OnDied.RemoveDynamic(this, &ARollBallGameModeBase::HandlePlayerDied);
 	}
 
-	for (ARollBallEnemy* Enemy : AliveEnemies)
+	for (ARollBallEnemy* Enemy : AllEnemies)
 	{
 		if (IsValid(Enemy))
 		{
 			Enemy->OnDied.RemoveDynamic(this, &ARollBallGameModeBase::HandleEnemyDied);
 		}
 	}
+
+	UE_LOG(LogRollBallStage, Log, TEXT("풀 %d개, 부족해서 새로 만든 것 %d개"), AllEnemies.Num(), PoolMisses);
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -233,10 +236,7 @@ ARollBallEnemy* ARollBallGameModeBase::SpawnEnemy(ERollBallEnemyKind Kind, ERoll
 		return nullptr;
 	}
 
-	FActorSpawnParameters Params;
-	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	ARollBallEnemy* Enemy = World->SpawnActor<ARollBallEnemy>(EnemyClass, Location, FRotator::ZeroRotator, Params);
+	ARollBallEnemy* Enemy = AcquireEnemy();
 	if (Enemy == nullptr)
 	{
 		return nullptr;
@@ -246,17 +246,90 @@ ARollBallEnemy* ARollBallGameModeBase::SpawnEnemy(ERollBallEnemyKind Kind, ERoll
 	const float Size = (Rank == ERollBallSpawnRank::Boss) ? 3.0f
 		: (Rank == ERollBallSpawnRank::Elite) ? 1.5f : 1.0f;
 
-	Enemy->Setup(
+	Enemy->Activate(
 		Kind,
 		Setup.EnemyHealthScale * Multiplier,
 		Setup.EnemySpeedScale,
 		FMath::RoundToInt(Setup.GoldPerKill * Multiplier),
-		Size);
+		Size,
+		Location);
 
-	Enemy->OnDied.AddDynamic(this, &ARollBallGameModeBase::HandleEnemyDied);
 	AliveEnemies.Add(Enemy);
 
 	return Enemy;
+}
+
+ARollBallEnemy* ARollBallGameModeBase::CreatePooledEnemy()
+{
+	UWorld* World = GetWorld();
+	if (World == nullptr || EnemyClass == nullptr)
+	{
+		return nullptr;
+	}
+
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	Params.bDeferConstruction = true;
+
+	ARollBallEnemy* Enemy = World->SpawnActor<ARollBallEnemy>(
+		EnemyClass, FVector(0.0f, 0.0f, -100000.0f), FRotator::ZeroRotator, Params);
+	if (Enemy == nullptr)
+	{
+		return nullptr;
+	}
+
+	Enemy->SetAutoActivate(false);
+	Enemy->FinishSpawning(FTransform(FVector(0.0f, 0.0f, -100000.0f)));
+	Enemy->Deactivate();
+	Enemy->OnDied.AddDynamic(this, &ARollBallGameModeBase::HandleEnemyDied);
+
+	AllEnemies.Add(Enemy);
+	return Enemy;
+}
+
+ARollBallEnemy* ARollBallGameModeBase::AcquireEnemy()
+{
+	while (Pool.Num() > 0)
+	{
+		ARollBallEnemy* Enemy = Pool.Pop(EAllowShrinking::No);
+		if (IsValid(Enemy))
+		{
+			return Enemy;
+		}
+	}
+
+	++PoolMisses;
+	return CreatePooledEnemy();
+}
+
+void ARollBallGameModeBase::ReleaseEnemy(ARollBallEnemy* Enemy)
+{
+	if (!IsValid(Enemy))
+	{
+		return;
+	}
+
+	if (Enemy->IsActive())
+	{
+		Enemy->Deactivate();
+	}
+
+	Pool.AddUnique(Enemy);
+}
+
+void ARollBallGameModeBase::PrewarmPool()
+{
+	const int32 Target = FMath::Max(0, PoolPrewarmCount);
+	Pool.Reserve(Target);
+	AllEnemies.Reserve(Target);
+
+	for (int32 i = 0; i < Target; ++i)
+	{
+		if (ARollBallEnemy* Enemy = CreatePooledEnemy())
+		{
+			Pool.Add(Enemy);
+		}
+	}
 }
 
 bool ARollBallGameModeBase::FindSpawnLocation(ERollBallEnemyKind Kind, const ARollBallPlayer* Player,
@@ -332,10 +405,8 @@ void ARollBallGameModeBase::CullDistantEnemies()
 
 		if (FVector::DistSquared(Enemy->GetActorLocation(), Centre) > CullSquared)
 		{
-
-			Enemy->OnDied.RemoveDynamic(this, &ARollBallGameModeBase::HandleEnemyDied);
-			Enemy->Destroy();
 			AliveEnemies.RemoveAtSwap(i);
+			ReleaseEnemy(Enemy);
 		}
 	}
 }
@@ -374,7 +445,8 @@ void ARollBallGameModeBase::BuildArenaIfMissing()
 
 void ARollBallGameModeBase::HandleEnemyDied(ARollBallEnemy* Enemy, int32 GoldReward)
 {
-	AliveEnemies.Remove(Enemy);
+	AliveEnemies.RemoveSwap(Enemy);
+	Pool.AddUnique(Enemy);
 
 	if (bStageFinished || GoldReward <= 0)
 	{

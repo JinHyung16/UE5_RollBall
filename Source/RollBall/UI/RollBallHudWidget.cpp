@@ -211,7 +211,7 @@ void URollBallHudWidget::PaintResult(const FGeometry& Geometry, FSlateWindowElem
 
 	PaintTextCentered(Elements, TextLayer, Geometry,
 		PanelPos + FVector2D(0.0, 238.0 * Scale), FVector2D(PanelSize.X, 24.0 * Scale),
-		bSurvived ? TEXT("골드는 이미 계정에 들어갔다. 곧 다음 스테이지")
-		          : TEXT("골드는 이미 계정에 들어갔다. 곧 이 스테이지 다시"),
+		bSurvived ? TEXT("곧 다음 스테이지")
+		          : TEXT("곧 이 스테이지 다시"),
 		SmallFont, DimTextColor);
 }

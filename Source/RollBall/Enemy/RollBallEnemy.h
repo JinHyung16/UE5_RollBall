@@ -6,17 +6,15 @@
 
 class ARollBallPlayer;
 class UMaterialInstanceDynamic;
+class UMaterialInterface;
+class UStaticMesh;
 
 UENUM(BlueprintType)
 enum class ERollBallEnemyKind : uint8
 {
-
 	Chaser  UMETA(DisplayName = "돌진 원통"),
-
 	Roller  UMETA(DisplayName = "굴러오는 공"),
-
 	Blocker UMETA(DisplayName = "나무"),
-
 	Meteor  UMETA(DisplayName = "운석"),
 };
 
@@ -34,7 +32,16 @@ public:
 	FRollBallEnemyDied OnDied;
 
 	UFUNCTION(BlueprintCallable, Category = "RollBall|Enemy")
-	void Setup(ERollBallEnemyKind InKind, float HealthScale, float SpeedScale, int32 InGoldReward, float SizeScale);
+	void Activate(ERollBallEnemyKind InKind, float HealthScale, float SpeedScale, int32 InGoldReward,
+		float SizeScale, const FVector& Location);
+
+	UFUNCTION(BlueprintCallable, Category = "RollBall|Enemy")
+	void Deactivate();
+
+	UFUNCTION(BlueprintPure, Category = "RollBall|Enemy")
+	bool IsActive() const { return bActive; }
+
+	void SetAutoActivate(bool bInAutoActivate) { bAutoActivate = bInAutoActivate; }
 
 	UFUNCTION(BlueprintCallable, Category = "RollBall|Enemy")
 	bool ApplyWeaponDamage(float Amount, AActor* Causer);
@@ -43,7 +50,7 @@ public:
 	ERollBallEnemyKind GetKind() const { return Kind; }
 
 	UFUNCTION(BlueprintPure, Category = "RollBall|Enemy")
-	bool IsAlive() const { return Health > 0.0f; }
+	bool IsAlive() const { return bActive && Health > 0.0f; }
 
 	UFUNCTION(BlueprintPure, Category = "RollBall|Enemy")
 	float GetDespawnDistance() const { return DespawnDistance; }
@@ -57,6 +64,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "적")
 	ERollBallEnemyKind Kind = ERollBallEnemyKind::Chaser;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "적")
+	bool bAutoActivate = true;
 
 	UPROPERTY(BlueprintReadOnly, Category = "적")
 	float Health = 1.0f;
@@ -87,11 +97,22 @@ protected:
 
 private:
 	UPROPERTY()
+	TArray<TObjectPtr<UStaticMesh>> KindMeshes;
+
+	UPROPERTY()
+	TObjectPtr<UMaterialInterface> BaseMaterial = nullptr;
+
+	UPROPERTY()
 	UMaterialInstanceDynamic* MeshMaterial = nullptr;
+
+	TWeakObjectPtr<ARollBallPlayer> CachedPlayer;
 
 	FVector MeteorTargetZ = FVector::ZeroVector;
 
+	bool bActive = false;
 	bool bDying = false;
+	bool bHasShape = false;
+	ERollBallEnemyKind ShapeKind = ERollBallEnemyKind::Chaser;
 
 	UFUNCTION()
 	void OnOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -101,11 +122,13 @@ private:
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
-	void ConfigureForKind(float SizeScale);
+	void ApplyStatsForKind(float HealthScale, float SpeedScale);
+	void ApplyShapeForKind(float SizeScale);
+	void ApplyCollisionForKind();
 
 	void TouchPlayer(ARollBallPlayer* Player, const FVector& FromDirection);
 
 	void Die(AActor* Causer);
 
-	ARollBallPlayer* FindPlayer() const;
+	ARollBallPlayer* FindPlayer();
 };
