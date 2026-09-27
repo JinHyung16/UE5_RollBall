@@ -11,13 +11,4 @@ struct FRollBallStageRow : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stage")
 	FName LevelName = NAME_None;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stage", meta = (ClampMin = "1"))
-	int32 RequiredItemCount = 5;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stage", meta = (ClampMin = "0"))
-	float TimeLimitSeconds = 30.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stage")
-	FText DisplayName;
 };

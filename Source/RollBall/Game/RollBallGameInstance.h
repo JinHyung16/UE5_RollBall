@@ -19,33 +19,11 @@ class ROLLBALL_API URollBallGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RollBall|Stages")
 	UDataTable* StageTable = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RollBall|Stages")
-	TArray<FName> StageOrder;
-
 	UPROPERTY(BlueprintReadOnly, Category = "RollBall|Stages")
 	int32 CurrentStageIndex = 0;
-
-	UPROPERTY(BlueprintReadWrite, Category = "RollBall|Player")
-	FString PlayerNickname;
-
-	UFUNCTION(BlueprintCallable, Category = "RollBall|Stages")
-	bool GetCurrentStage(FRollBallStageRow& OutRow) const;
-
-	UFUNCTION(BlueprintCallable, Category = "RollBall|Stages")
-	bool HasNextStage() const;
-
-	UFUNCTION(BlueprintCallable, Category = "RollBall|Stages")
-	void StartFromFirstStage();
-
-	UFUNCTION(BlueprintCallable, Category = "RollBall|Stages")
-	void AdvanceToNextStage();
-
-	UFUNCTION(BlueprintCallable, Category = "RollBall|Stages")
-	bool OpenCurrentStageLevel();
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "RollBall|Stages")
 	FRollBallStageRules StageRules;
@@ -125,9 +103,6 @@ public:
 	UFUNCTION(BlueprintPure, Category = "RollBall|Skill")
 	FRollBallSkillStats GetSkillStats() const { return SkillStats; }
 
-	UFUNCTION(BlueprintPure, Category = "RollBall|Skill")
-	float GetSkillStat(ERollBallSkillStat Stat) const { return SkillStats.Get(Stat); }
-
 private:
 	UPROPERTY()
 	TObjectPtr<URollBallSkillGraph> SkillGraph = nullptr;
@@ -154,6 +129,4 @@ private:
 
 	UFUNCTION()
 	void HandleSkillGraphChanged();
-
-	FName ResolveRowName(int32 Index) const;
 };

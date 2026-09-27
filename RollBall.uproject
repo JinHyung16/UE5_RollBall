@@ -12,6 +12,11 @@
     "Engine",
     "UMG"
    ]
+  },
+  {
+   "Name": "RollBallEditor",
+   "Type": "Editor",
+   "LoadingPhase": "Default"
   }
  ],
  "Plugins": [

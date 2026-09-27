@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "RollBall/Data/RollBallStageRow.h"
 #include "RollBall/Enemy/RollBallEnemy.h"
 #include "RollBall/Stage/RollBallStageTypes.h"
 #include "RollBallGameModeBase.generated.h"
@@ -25,30 +24,6 @@ class ROLLBALL_API ARollBallGameModeBase : public AGameModeBase
 
 public:
 	ARollBallGameModeBase();
-
-	UFUNCTION(BlueprintCallable, Category = "RollBall")
-	void ItemCollected();
-
-	UFUNCTION(BlueprintCallable, Category = "RollBall|Result")
-	void RequestNextStage();
-
-	UFUNCTION(BlueprintCallable, Category = "RollBall|Result")
-	void RequestRetryStage();
-
-	UFUNCTION(BlueprintCallable, Category = "RollBall|Result")
-	void RequestExitToMenu();
-
-	UFUNCTION(BlueprintPure, Category = "RollBall|Stage")
-	ERollBallStagePhase GetPhase() const { return Phase; }
-
-	UFUNCTION(BlueprintPure, Category = "RollBall|Stage")
-	float GetRemainingTime() const { return RemainingTime; }
-
-	UFUNCTION(BlueprintPure, Category = "RollBall|Stage")
-	int32 GetGoldEarned() const { return GoldEarned; }
-
-	UFUNCTION(BlueprintPure, Category = "RollBall|Stage")
-	int32 GetKillCount() const { return KillCount; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -150,6 +125,8 @@ protected:
 	void BuildArenaIfMissing();
 
 	void FinishStage(ERollBallStageResult Result);
+	void RequestNextStage();
+	void RequestRetryStage();
 	void UpdateHud();
 
 	ARollBallPlayer* GetBallPlayer() const;

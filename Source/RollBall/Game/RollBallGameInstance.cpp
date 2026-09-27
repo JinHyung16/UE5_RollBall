@@ -10,78 +10,6 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogRollBallAccount, Log, All);
 
-FName URollBallGameInstance::ResolveRowName(int32 Index) const
-{
-	if (Index < 0)
-	{
-		return NAME_None;
-	}
-
-	if (StageOrder.Num() > 0)
-	{
-		return StageOrder.IsValidIndex(Index) ? StageOrder[Index] : NAME_None;
-	}
-
-	if (StageTable == nullptr)
-	{
-		return NAME_None;
-	}
-
-	const TArray<FName> RowNames = StageTable->GetRowNames();
-	return RowNames.IsValidIndex(Index) ? RowNames[Index] : NAME_None;
-}
-
-bool URollBallGameInstance::GetCurrentStage(FRollBallStageRow& OutRow) const
-{
-	if (StageTable == nullptr)
-	{
-		return false;
-	}
-
-	const FName RowName = ResolveRowName(CurrentStageIndex);
-	if (RowName.IsNone())
-	{
-		return false;
-	}
-
-	if (const FRollBallStageRow* Row = StageTable->FindRow<FRollBallStageRow>(RowName, TEXT("RollBallGameInstance")))
-	{
-		OutRow = *Row;
-		return true;
-	}
-	return false;
-}
-
-bool URollBallGameInstance::HasNextStage() const
-{
-	return !ResolveRowName(CurrentStageIndex + 1).IsNone();
-}
-
-void URollBallGameInstance::StartFromFirstStage()
-{
-	CurrentStageIndex = 0;
-}
-
-void URollBallGameInstance::AdvanceToNextStage()
-{
-	if (HasNextStage())
-	{
-		++CurrentStageIndex;
-	}
-}
-
-bool URollBallGameInstance::OpenCurrentStageLevel()
-{
-	FRollBallStageRow Row;
-	if (!GetCurrentStage(Row) || Row.LevelName.IsNone())
-	{
-		return false;
-	}
-
-	UGameplayStatics::OpenLevel(this, Row.LevelName);
-	return true;
-}
-
 FRollBallStageSetup URollBallGameInstance::GetStageSetup(int32 StageNumber) const
 {
 	FRollBallStageSetup Setup;
@@ -118,7 +46,6 @@ FRollBallStageSetup URollBallGameInstance::GetStageSetup(int32 StageNumber) cons
 			if (const FRollBallStageRow* Row =
 				StageTable->FindRow<FRollBallStageRow>(RowName, TEXT("RollBallGameInstance"), false))
 			{
-
 				if (LevelExists(Row->LevelName))
 				{
 					Setup.LevelName = Row->LevelName;
@@ -164,7 +91,6 @@ bool URollBallGameInstance::TravelToStage(int32 StageNumber)
 
 	if (Setup.LevelName.IsNone())
 	{
-
 		UGameplayStatics::OpenLevel(this, FName(*UGameplayStatics::GetCurrentLevelName(this, true)),
 			true, PlayMode);
 		return false;
@@ -347,7 +273,6 @@ void URollBallGameInstance::AddGold(int32 Amount)
 
 float URollBallGameInstance::GetGoldMultiplier() const
 {
-
 	const float FromSkills = SkillStats.Get(ERollBallSkillStat::GoldGain);
 	const float FromRebirths = 1.0f + GetRebirthCount() * RebirthGoldBonusPerCount;
 
@@ -417,14 +342,12 @@ void URollBallGameInstance::SaveAccount()
 	{
 		SaveData->SkillLevelsByPlacementId = SkillGraph->GetLevelsByPlacementId();
 	}
-	SaveData->PlayerNickname = PlayerNickname;
 
 	UGameplayStatics::SaveGameToSlot(SaveData, SaveSlotName, 0);
 }
 
 void URollBallGameInstance::LoadAccount()
 {
-
 	if (UGameplayStatics::DoesSaveGameExist(SaveSlotName, 0))
 	{
 		SaveData = Cast<URollBallSaveGame>(UGameplayStatics::LoadGameFromSlot(SaveSlotName, 0));
@@ -435,8 +358,6 @@ void URollBallGameInstance::LoadAccount()
 		SaveData = Cast<URollBallSaveGame>(
 			UGameplayStatics::CreateSaveGameObject(URollBallSaveGame::StaticClass()));
 	}
-
-	PlayerNickname = SaveData->PlayerNickname;
 
 	ApplySaveToGraph();
 	OnGoldChanged.Broadcast(SaveData->Gold);
@@ -449,7 +370,6 @@ void URollBallGameInstance::DeleteAccount()
 	SaveData = Cast<URollBallSaveGame>(
 		UGameplayStatics::CreateSaveGameObject(URollBallSaveGame::StaticClass()));
 
-	PlayerNickname.Empty();
 	CurrentStageIndex = 0;
 
 	if (SkillGraph != nullptr)

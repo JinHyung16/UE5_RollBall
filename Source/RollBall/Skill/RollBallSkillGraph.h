@@ -15,7 +15,6 @@ class ROLLBALL_API URollBallSkillGraph : public UObject
 	GENERATED_BODY()
 
 public:
-
 	UPROPERTY(BlueprintAssignable, Category = "RollBall|Skill")
 	FRollBallSkillGraphChanged OnGraphChanged;
 
@@ -36,9 +35,6 @@ public:
 	UFUNCTION(BlueprintPure, Category = "RollBall|Skill")
 	int32 FindNodeIndexByPlacementId(int32 PlacementId) const;
 
-	UFUNCTION(BlueprintPure, Category = "RollBall|Skill")
-	int32 GetCoreNodeIndex() const { return CoreNodeIndex; }
-
 	void GetCellBounds(FVector2D& OutMin, FVector2D& OutMax) const;
 
 	const TMap<int32, int32>& GetLevelsByPlacementId() const { return LevelsByPlacementId; }
@@ -56,9 +52,6 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "RollBall|Skill")
 	int32 GetNextCost(int32 NodeIndex) const;
-
-	UFUNCTION(BlueprintPure, Category = "RollBall|Skill")
-	int32 GetSpentGold(int32 NodeIndex) const;
 
 	UFUNCTION(BlueprintPure, Category = "RollBall|Skill")
 	bool IsGateOpen(int32 NodeIndex, int32 BestStage) const;
@@ -79,9 +72,6 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "RollBall|Skill")
 	FRollBallSkillStats Recalculate() const;
-
-	UFUNCTION(BlueprintPure, Category = "RollBall|Skill")
-	int32 GetTotalSpentGold() const;
 
 	UFUNCTION(BlueprintCallable, Category = "RollBall|Skill")
 	void ResetAllLevels();

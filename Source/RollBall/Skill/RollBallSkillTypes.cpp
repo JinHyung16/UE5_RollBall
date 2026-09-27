@@ -4,7 +4,6 @@
 
 namespace
 {
-
 	bool IsMultiplierStat(ERollBallSkillStat Stat)
 	{
 		switch (Stat)

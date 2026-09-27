@@ -1,6 +1,7 @@
 #include "RollBallMenuGameModeBase.h"
 
 #include "Blueprint/UserWidget.h"
+#include "UObject/ConstructorHelpers.h"
 #include "RollBallGameInstance.h"
 #include "RollBallMenuWidget.h"
 
@@ -8,7 +9,9 @@ ARollBallMenuGameModeBase::ARollBallMenuGameModeBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	MenuWidgetClass = URollBallMenuWidget::StaticClass();
+	// 메뉴 배치는 위젯 블루프린트에 있다.
+	static ConstructorHelpers::FClassFinder<UUserWidget> MenuWidgetFinder(TEXT("/Game/UI/WBP_MainMenu"));
+	MenuWidgetClass = MenuWidgetFinder.Succeeded() ? MenuWidgetFinder.Class : TSubclassOf<UUserWidget>(URollBallMenuWidget::StaticClass());
 }
 
 void ARollBallMenuGameModeBase::BeginPlay()
@@ -31,14 +34,10 @@ void ARollBallMenuGameModeBase::BeginPlay()
 	}
 }
 
-void ARollBallMenuGameModeBase::StartGame(const FString& Nickname)
+void ARollBallMenuGameModeBase::StartGame()
 {
-	URollBallGameInstance* GI = GetGameInstance<URollBallGameInstance>();
-	if (GI == nullptr)
+	if (URollBallGameInstance* GameInstance = GetGameInstance<URollBallGameInstance>())
 	{
-		return;
+		GameInstance->TravelToStage(1);
 	}
-
-	GI->PlayerNickname = Nickname;
-	GI->TravelToStage(1);
 }

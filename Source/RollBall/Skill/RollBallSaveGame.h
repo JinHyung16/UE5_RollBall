@@ -10,7 +10,6 @@ class ROLLBALL_API URollBallSaveGame : public USaveGame
 	GENERATED_BODY()
 
 public:
-
 	UPROPERTY(BlueprintReadWrite, Category = "RollBall|Save")
 	TMap<int32, int32> SkillLevelsByPlacementId;
 
@@ -25,10 +24,4 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, Category = "RollBall|Save")
 	int32 RebirthCount = 0;
-
-	UPROPERTY(BlueprintReadWrite, Category = "RollBall|Save")
-	FString PlayerNickname;
-
-	UPROPERTY(BlueprintReadWrite, Category = "RollBall|Save")
-	int32 SaveVersion = 1;
 };

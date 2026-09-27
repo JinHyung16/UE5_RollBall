@@ -17,11 +17,9 @@ class ROLLBALL_API ARollBallPlayer : public APawn
 	GENERATED_BODY()
 
 public:
-
 	ARollBallPlayer();
 
 protected:
-
 	virtual void BeginPlay() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
@@ -91,7 +89,6 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
-
 	int32 JumpCount = 0;
 
 	float InvulnerableUntil = 0.0f;

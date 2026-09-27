@@ -15,7 +15,7 @@ public:
 	ARollBallMenuGameModeBase();
 
 	UFUNCTION(BlueprintCallable, Category = "RollBall|Menu")
-	void StartGame(const FString& Nickname);
+	void StartGame();
 
 protected:
 	virtual void BeginPlay() override;

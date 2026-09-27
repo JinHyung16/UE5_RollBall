@@ -51,7 +51,6 @@ void URollBallWeaponComponent::RebuildFromStats(const FRollBallSkillStats& Stats
 
 		if (Saw != nullptr)
 		{
-
 			const float Size = Stats.Get(ERollBallSkillStat::SawSize);
 			Saw->SetRelativeScale3D(FVector(Size * 0.9f, Size * 0.15f, Size * 0.9f));
 			Saw->SetRelativeRotation(FRotator(90.0f, 0.0f, 0.0f));
@@ -270,7 +269,6 @@ void URollBallWeaponComponent::StrikeWithPart(UStaticMeshComponent* Part, float 
 
 		if (PushStrength > 0.0f)
 		{
-
 			const FVector Away = (Enemy->GetActorLocation() - GetComponentLocation()).GetSafeNormal();
 			if (UPrimitiveComponent* Body = Cast<UPrimitiveComponent>(Enemy->GetRootComponent()))
 			{
@@ -290,7 +288,6 @@ void URollBallWeaponComponent::StrikeWithPart(UStaticMeshComponent* Part, float 
 
 namespace
 {
-
 	TPair<uint32, uint32> HitKey(const UStaticMeshComponent* Part, const AActor* Enemy)
 	{
 		return TPair<uint32, uint32>(Part->GetUniqueID(), Enemy->GetUniqueID());

@@ -9,7 +9,6 @@
 
 namespace RollBallPaint
 {
-
 	inline const FSlateBrush& WhiteBoxBrush()
 	{
 		static const FSlateColorBrush Brush(FLinearColor::White);

@@ -2,6 +2,9 @@
 
 #include "RollBallPaint.h"
 
+#include "Components/Button.h"
+#include "Components/TextBlock.h"
+
 #include "RollBall/Game/RollBallGameInstance.h"
 #include "RollBall/Skill/RollBallSkillGraph.h"
 
@@ -12,13 +15,27 @@ using namespace RollBallPaint;
 URollBallSkillGraphWidget::URollBallSkillGraphWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
-
 	LabelFont = FCoreStyle::GetDefaultFontStyle("Regular", 10);
 	TooltipFont = FCoreStyle::GetDefaultFontStyle("Regular", 12);
 
 	SetVisibility(ESlateVisibility::Visible);
 
 	SetIsFocusable(true);
+}
+
+void URollBallSkillGraphWidget::NativeOnInitialized()
+{
+	Super::NativeOnInitialized();
+
+	if (CloseButton != nullptr)
+	{
+		CloseButton->OnClicked.AddDynamic(this, &URollBallSkillGraphWidget::HandleCloseClicked);
+	}
+}
+
+void URollBallSkillGraphWidget::HandleCloseClicked()
+{
+	RemoveFromParent();
 }
 
 void URollBallSkillGraphWidget::NativeConstruct()
@@ -85,7 +102,6 @@ FVector2D URollBallSkillGraphWidget::CellToLocal(const FVector2D& Cell, const FV
 
 FVector2D URollBallSkillGraphWidget::LocalToCell(const FVector2D& Local, const FVector2D& CanvasSize) const
 {
-
 	const float Pixels = FMath::Max(0.0001f, PixelsPerCell());
 	const FVector2D Centre = CanvasSize * 0.5;
 
@@ -170,25 +186,21 @@ void URollBallSkillGraphWidget::FrameAll()
 	bFocusing = false;
 }
 
-void URollBallSkillGraphWidget::FocusOnCore()
-{
-	if (Graph == nullptr)
-	{
-		return;
-	}
-
-	const int32 CoreIndex = Graph->GetCoreNodeIndex();
-	if (Graph->IsValidNodeIndex(CoreIndex))
-	{
-		Pan = Graph->GetNode(CoreIndex).Cell;
-	}
-}
-
 void URollBallSkillGraphWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
 	LastCanvasSize = FVector2D(MyGeometry.GetLocalSize());
+
+	if (GoldText != nullptr && GetRollBallGameInstance() != nullptr)
+	{
+		const int32 Gold = GetGold();
+		if (Gold != ShownGold)
+		{
+			ShownGold = Gold;
+			GoldText->SetText(FText::Format(LOCTEXT("OwnedGold", "보유 골드 {0}"), FText::AsNumber(Gold)));
+		}
+	}
 
 	if (bPendingFrameAll && LastCanvasSize.X > 1.0 && LastCanvasSize.Y > 1.0)
 	{
@@ -198,7 +210,6 @@ void URollBallSkillGraphWidget::NativeTick(const FGeometry& MyGeometry, float In
 
 	if (!FMath::IsNearlyEqual(Zoom, TargetZoom, 0.0005f))
 	{
-
 		const float Alpha = 1.0f - FMath::Exp(-ZoomDampRate * InDeltaTime);
 		Zoom = FMath::Lerp(Zoom, TargetZoom, Alpha);
 	}
@@ -209,7 +220,6 @@ void URollBallSkillGraphWidget::NativeTick(const FGeometry& MyGeometry, float In
 
 	if (bFocusing)
 	{
-
 		Pan += FocusCell - LocalToCell(FocusLocal, LastCanvasSize);
 
 		if (FMath::IsNearlyEqual(Zoom, TargetZoom, 0.0005f))
@@ -241,7 +251,6 @@ void URollBallSkillGraphWidget::PaintGrid(const FGeometry& Geometry, FSlateWindo
 	const float Pixels = PixelsPerCell();
 	if (Pixels < GridMinPixelSpacing)
 	{
-
 		return;
 	}
 
@@ -475,7 +484,6 @@ FLinearColor URollBallSkillGraphWidget::BranchColorOf(ERollBallSkillBranch Branc
 
 FLinearColor URollBallSkillGraphWidget::NodeFillColorOf(int32 NodeIndex) const
 {
-
 	const FRollBallSkillNode& Node = Graph->GetNode(NodeIndex);
 	FLinearColor Color = BranchColorOf(Node.Definition.Branch);
 
@@ -536,7 +544,6 @@ FReply URollBallSkillGraphWidget::NativeOnMouseButtonDown(const FGeometry& InGeo
 		}
 		else if (Hit == SelectedNodeIndex)
 		{
-
 			AttemptPurchase(Hit);
 		}
 		else
@@ -573,7 +580,6 @@ FReply URollBallSkillGraphWidget::NativeOnMouseMove(const FGeometry& InGeometry,
 
 	if (bPanning)
 	{
-
 		const FVector2D Before = LocalToCell(LastPanLocal, CanvasSize);
 		const FVector2D Now = LocalToCell(Local, CanvasSize);
 		Pan += Before - Now;

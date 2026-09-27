@@ -7,6 +7,7 @@
 #include "HAL/IConsoleManager.h"
 #include "TimerManager.h"
 #include "UnrealClient.h"
+#include "UObject/ConstructorHelpers.h"
 
 #include "RollBallGameInstance.h"
 #include "RollBallPlayer.h"
@@ -27,8 +28,11 @@ ARollBallGameModeBase::ARollBallGameModeBase()
 	PrimaryActorTick.bCanEverTick = false;
 
 	EnemyClass = ARollBallEnemy::StaticClass();
-	HudWidgetClass = URollBallHudWidget::StaticClass();
 	DefaultPawnClass = ARollBallPlayer::StaticClass();
+
+	// HUD 배치는 위젯 블루프린트에 있다. 에셋이 없으면 FClassFinder 가 오류 로그를 남기고 C++ 클래스로 뜬다(화면은 빈다).
+	static ConstructorHelpers::FClassFinder<UUserWidget> HudWidgetFinder(TEXT("/Game/UI/WBP_Hud"));
+	HudWidgetClass = HudWidgetFinder.Succeeded() ? HudWidgetFinder.Class : TSubclassOf<UUserWidget>(URollBallHudWidget::StaticClass());
 }
 
 void ARollBallGameModeBase::BeginPlay()
@@ -45,7 +49,6 @@ void ARollBallGameModeBase::BeginPlay()
 	}
 	else
 	{
-
 		Setup = FRollBallStageSetup();
 	}
 
@@ -69,6 +72,15 @@ void ARollBallGameModeBase::BeginPlay()
 			GameWidget->AddToViewport();
 		}
 	}
+
+	// 메뉴와 결과 창이 건 UIOnly 는 뷰포트에 "입력 무시"를 켜고, 이건 레벨을 옮겨도 남는다.
+	// 되돌리지 않으면 메뉴에서 시작하거나 판을 다시 시작했을 때 WASD 가 먹지 않는다.
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+	{
+		PC->bShowMouseCursor = false;
+		PC->SetInputMode(FInputModeGameOnly());
+	}
+
 	UpdateHud();
 
 	UE_LOG(LogRollBallStage, Log,
@@ -124,7 +136,6 @@ void ARollBallGameModeBase::TickClock()
 	const int32 ShotSeconds = CVarAutoShotSeconds.GetValueOnGameThread();
 	if (ShotSeconds > 0 && ClockTicks % (ShotSeconds * 10) == 0)
 	{
-
 		FScreenshotRequest::RequestScreenshot(true);
 	}
 
@@ -143,7 +154,6 @@ void ARollBallGameModeBase::TickClock()
 
 	if (RemainingTime <= 0.0f)
 	{
-
 		FinishStage(ERollBallStageResult::Cleared);
 	}
 }
@@ -159,7 +169,6 @@ void ARollBallGameModeBase::EnterPhase(ERollBallStagePhase NewPhase)
 
 	if (Phase == ERollBallStagePhase::Boss)
 	{
-
 		SpawnEnemy(ERollBallEnemyKind::Chaser, ERollBallSpawnRank::Boss);
 	}
 
@@ -344,7 +353,6 @@ bool ARollBallGameModeBase::FindSpawnLocation(ERollBallEnemyKind Kind, const ARo
 
 	if (Kind == ERollBallEnemyKind::Meteor)
 	{
-
 		const float Spread = 400.0f;
 		OutLocation = Centre + FVector(
 			FMath::FRandRange(-Spread, Spread),
@@ -353,29 +361,46 @@ bool ARollBallGameModeBase::FindSpawnLocation(ERollBallEnemyKind Kind, const ARo
 		return true;
 	}
 
-	const float Angle = FMath::FRandRange(0.0f, 2.0f * PI);
-	OutLocation = Centre + FVector(FMath::Cos(Angle) * SpawnRadius, FMath::Sin(Angle) * SpawnRadius, 0.0f);
-
-	if (Arena != nullptr)
-	{
-		const float Limit = Arena->GetArenaRadius() - 300.0f;
-		OutLocation.X = FMath::Clamp(OutLocation.X, -Limit, Limit);
-		OutLocation.Y = FMath::Clamp(OutLocation.Y, -Limit, Limit);
-	}
-
 	const UWorld* World = GetWorld();
-	if (World != nullptr)
+
+	FCollisionQueryParams Query;
+	Query.AddIgnoredActor(Player);
+
+	// 바위 위에 내려앉으면 적이 공중에 떠서 움직이므로, 바위가 아닌 바닥이 나올 때까지 방향을 바꿔 본다.
+	const int32 MaxAttempts = 8;
+	for (int32 Attempt = 0; Attempt < MaxAttempts; ++Attempt)
 	{
+		const float Angle = FMath::FRandRange(0.0f, 2.0f * PI);
+		OutLocation = Centre + FVector(FMath::Cos(Angle) * SpawnRadius, FMath::Sin(Angle) * SpawnRadius, 0.0f);
+
+		if (Arena != nullptr)
+		{
+			const float Limit = Arena->GetArenaRadius() - 300.0f;
+			OutLocation.X = FMath::Clamp(OutLocation.X, -Limit, Limit);
+			OutLocation.Y = FMath::Clamp(OutLocation.Y, -Limit, Limit);
+		}
+
+		if (World == nullptr)
+		{
+			break;
+		}
+
 		FHitResult Hit;
 		const FVector TraceStart = OutLocation + FVector(0.0f, 0.0f, 2000.0f);
 		const FVector TraceEnd = OutLocation - FVector(0.0f, 0.0f, 4000.0f);
 
-		FCollisionQueryParams Query;
-		Query.AddIgnoredActor(Player);
+		if (!World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_WorldStatic, Query))
+		{
+			break;
+		}
 
-		if (World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_WorldStatic, Query))
+		const UPrimitiveComponent* HitComponent = Hit.GetComponent();
+		const bool bOnRock = HitComponent != nullptr && HitComponent->ComponentHasTag(ARollBallArena::RockTag);
+
+		if (!bOnRock || Attempt == MaxAttempts - 1)
 		{
 			OutLocation = Hit.ImpactPoint + FVector(0.0f, 0.0f, 60.0f);
+			break;
 		}
 	}
 
@@ -438,7 +463,6 @@ void ARollBallGameModeBase::BuildArenaIfMissing()
 
 	if (Arena != nullptr)
 	{
-
 		Arena->Build(Setup.StageNumber);
 	}
 }
@@ -462,21 +486,6 @@ void ARollBallGameModeBase::HandleEnemyDied(ARollBallEnemy* Enemy, int32 GoldRew
 	else
 	{
 		GoldEarned += GoldReward;
-	}
-
-	UpdateHud();
-}
-
-void ARollBallGameModeBase::ItemCollected()
-{
-	if (bStageFinished)
-	{
-		return;
-	}
-
-	if (URollBallGameInstance* GameInstance = GetGameInstance<URollBallGameInstance>())
-	{
-		GoldEarned += GameInstance->AddEarnedGold(Setup.GoldPerKill);
 	}
 
 	UpdateHud();
@@ -534,6 +543,12 @@ void ARollBallGameModeBase::FinishStage(ERollBallStageResult Result)
 		GameWidget->ShowResult(Result);
 	}
 
+	// 시계가 멈춰 자동 스크린샷도 멈추므로, 테스트 중이면 결과 창을 한 장 따로 찍는다.
+	if (CVarAutoShotSeconds.GetValueOnGameThread() > 0)
+	{
+		FScreenshotRequest::RequestScreenshot(true);
+	}
+
 	if (ResultAutoAdvanceSeconds > 0.0f)
 	{
 		GetWorldTimerManager().SetTimer(AdvanceHandle, this,
@@ -543,7 +558,6 @@ void ARollBallGameModeBase::FinishStage(ERollBallStageResult Result)
 
 void ARollBallGameModeBase::HandleAutoAdvance()
 {
-
 	const bool bAdvance = (StageResult == ERollBallStageResult::Cleared) || bAdvanceOnFailure;
 
 	if (bAdvance)
@@ -592,7 +606,6 @@ void ARollBallGameModeBase::RequestNextStage()
 
 	if (Next > GameInstance->StageRules.MaxStage)
 	{
-
 		UGameplayStatics::OpenLevel(this, MainMenuLevelName);
 		return;
 	}
@@ -610,9 +623,4 @@ void ARollBallGameModeBase::RequestRetryStage()
 	{
 		UGameplayStatics::OpenLevel(this, FName(*UGameplayStatics::GetCurrentLevelName(this, true)));
 	}
-}
-
-void ARollBallGameModeBase::RequestExitToMenu()
-{
-	UGameplayStatics::OpenLevel(this, MainMenuLevelName);
 }

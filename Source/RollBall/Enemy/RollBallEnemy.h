@@ -47,13 +47,7 @@ public:
 	bool ApplyWeaponDamage(float Amount, AActor* Causer);
 
 	UFUNCTION(BlueprintPure, Category = "RollBall|Enemy")
-	ERollBallEnemyKind GetKind() const { return Kind; }
-
-	UFUNCTION(BlueprintPure, Category = "RollBall|Enemy")
 	bool IsAlive() const { return bActive && Health > 0.0f; }
-
-	UFUNCTION(BlueprintPure, Category = "RollBall|Enemy")
-	float GetDespawnDistance() const { return DespawnDistance; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -84,9 +78,6 @@ protected:
 	int32 GoldReward = 5;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "적")
-	float DespawnDistance = 6000.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "적")
 	float PushImpulse = 90000.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "적")
@@ -104,6 +95,15 @@ private:
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* MeshMaterial = nullptr;
+
+	/** 운석용 Fab 바위 머티리얼. 없으면 운석도 기본 도형 머티리얼을 쓴다 */
+	UPROPERTY()
+	TObjectPtr<UMaterialInterface> RockMaterial = nullptr;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* MeteorMaterial = nullptr;
+
+	FRotator MeteorSpin = FRotator::ZeroRotator;
 
 	TWeakObjectPtr<ARollBallPlayer> CachedPlayer;
 

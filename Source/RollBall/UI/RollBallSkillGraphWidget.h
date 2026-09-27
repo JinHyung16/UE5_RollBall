@@ -5,9 +5,15 @@
 #include "RollBall/Skill/RollBallSkillTypes.h"
 #include "RollBallSkillGraphWidget.generated.h"
 
+class UButton;
+class UTextBlock;
 class URollBallSkillGraph;
 class URollBallGameInstance;
 
+/**
+ * 스킬 트리 화면. 격자·연결선·노드·툴팁은 확대/이동 때문에 NativePaint 로 직접 그린다.
+ * 그 위에 얹는 머리 줄(제목, 보유 골드, 닫기 버튼)은 /Game/UI/WBP_SkillTree 디자이너에서 고친다.
+ */
 UCLASS()
 class ROLLBALL_API URollBallSkillGraphWidget : public UUserWidget
 {
@@ -22,9 +28,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "RollBall|Skill")
 	void FrameAll();
 
-	UFUNCTION(BlueprintCallable, Category = "RollBall|Skill")
-	void FocusOnCore();
-
 	UFUNCTION(BlueprintImplementableEvent, Category = "RollBall|Skill")
 	void OnPurchaseRefused(const FText& Reason);
 
@@ -32,6 +35,7 @@ public:
 	void OnPurchased(int32 NodeIndex, int32 SpentGold);
 
 protected:
+	virtual void NativeOnInitialized() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -108,7 +112,20 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "색")
 	FSlateFontInfo TooltipFont;
 
+	/** 누르면 창을 닫는다. 없어도 Esc 로 닫힌다 */
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UButton> CloseButton;
+
+	/** 보유 골드. 없으면 표시하지 않는다 */
+	UPROPERTY(meta = (BindWidgetOptional))
+	TObjectPtr<UTextBlock> GoldText;
+
 private:
+	int32 ShownGold = INDEX_NONE;
+
+	UFUNCTION()
+	void HandleCloseClicked();
+
 	UPROPERTY()
 	TObjectPtr<URollBallSkillGraph> Graph = nullptr;
 

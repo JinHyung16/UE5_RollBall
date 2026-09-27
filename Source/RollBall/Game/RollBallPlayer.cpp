@@ -19,7 +19,6 @@ static TAutoConsoleVariable<int32> CVarAutoPlay(
 
 ARollBallPlayer::ARollBallPlayer()
 {
-
 	PrimaryActorTick.bCanEverTick = true;
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
@@ -134,7 +133,6 @@ void ARollBallPlayer::TakeHit(int32 Damage, AActor* Causer)
 
 	if (Health <= 0)
 	{
-
 		OnDied.Broadcast();
 	}
 }

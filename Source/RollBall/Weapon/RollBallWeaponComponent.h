@@ -23,7 +23,6 @@ public:
 		FActorComponentTickFunction* ThisTickFunction) override;
 
 protected:
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "무기", meta = (ClampMin = "10"))
 	float HammerRadius = 190.0f;
 
@@ -37,7 +36,6 @@ protected:
 	float MinAimSpeed = 40.0f;
 
 private:
-
 	UPROPERTY()
 	TArray<UStaticMeshComponent*> HammerHeads;
 

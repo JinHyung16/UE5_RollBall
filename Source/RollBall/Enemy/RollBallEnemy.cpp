@@ -38,12 +38,20 @@ ARollBallEnemy::ARollBallEnemy()
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Basic(
 		TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
 
+	// 운석은 Fab 바위로 떨어뜨린다. 피벗이 바닥 중앙이고 크기가 원뿔과 비슷한 05 번을 쓴다.
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> MeteorRock(
+		TEXT("/Game/Fab/RocksStylized/SM_Rocks_05.SM_Rocks_05"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> Rock(
+		TEXT("/Game/Fab/RocksStylized/RocksStylized_M.RocksStylized_M"));
+
 	KindMeshes.SetNum(4);
 	KindMeshes[static_cast<int32>(ERollBallEnemyKind::Chaser)] = Cylinder.Object;
 	KindMeshes[static_cast<int32>(ERollBallEnemyKind::Roller)] = Sphere.Object;
 	KindMeshes[static_cast<int32>(ERollBallEnemyKind::Blocker)] = Cube.Object;
-	KindMeshes[static_cast<int32>(ERollBallEnemyKind::Meteor)] = Cone.Object;
+	KindMeshes[static_cast<int32>(ERollBallEnemyKind::Meteor)] =
+		MeteorRock.Succeeded() ? MeteorRock.Object : Cone.Object;
 	BaseMaterial = Basic.Object;
+	RockMaterial = MeteorRock.Succeeded() ? Rock.Object : nullptr;
 
 	Mesh->SetStaticMesh(Cylinder.Object);
 	Mesh->SetMaterial(0, BaseMaterial);
@@ -60,6 +68,15 @@ void ARollBallEnemy::BeginPlay()
 
 	Mesh->SetMaterial(0, BaseMaterial);
 	MeshMaterial = Mesh->CreateAndSetMaterialInstanceDynamic(0);
+
+	if (RockMaterial != nullptr)
+	{
+		// 바위 텍스처에 주황을 섞고 스스로 빛나게 해서 달궈진 운석으로 읽히게 한다.
+		MeteorMaterial = UMaterialInstanceDynamic::Create(RockMaterial, this);
+		MeteorMaterial->SetScalarParameterValue(TEXT("DiffuseColorMapWeight"), 0.6f);
+		MeteorMaterial->SetVectorParameterValue(TEXT("DiffuseColor"), FLinearColor(0.60f, 0.16f, 0.04f));
+		MeteorMaterial->SetVectorParameterValue(TEXT("EmissiveColor"), FLinearColor(0.55f, 0.14f, 0.02f));
+	}
 
 	if (bAutoActivate && !bActive)
 	{
@@ -156,9 +173,13 @@ void ARollBallEnemy::ApplyShapeForKind(float SizeScale)
 			Mesh->SetStaticMesh(KindMeshes[Index]);
 		}
 
-		if (MeshMaterial != nullptr)
+		UMaterialInterface* Material = (Kind == ERollBallEnemyKind::Meteor && MeteorMaterial != nullptr)
+			? static_cast<UMaterialInterface*>(MeteorMaterial)
+			: static_cast<UMaterialInterface*>(MeshMaterial);
+
+		if (Material != nullptr)
 		{
-			Mesh->SetMaterial(0, MeshMaterial);
+			Mesh->SetMaterial(0, Material);
 		}
 
 		ShapeKind = Kind;
@@ -168,6 +189,13 @@ void ARollBallEnemy::ApplyShapeForKind(float SizeScale)
 	if (MeshMaterial != nullptr)
 	{
 		MeshMaterial->SetVectorParameterValue(TEXT("Color"), ColorOf(Kind));
+	}
+
+	if (Kind == ERollBallEnemyKind::Meteor)
+	{
+		// 바위 피벗이 바닥 중앙이라 세로축으로만 돌려야 제자리에서 돈다.
+		const float Yaw = FMath::FRandRange(120.0f, 240.0f);
+		MeteorSpin = FRotator(0.0f, FMath::RandBool() ? Yaw : -Yaw, 0.0f);
 	}
 
 	SetActorScale3D(FVector(FMath::Max(0.1f, SizeScale)));
@@ -226,7 +254,23 @@ void ARollBallEnemy::Tick(float DeltaTime)
 
 		if (Flat.SizeSquared() > 1.0f)
 		{
-			AddActorWorldOffset(Flat.GetSafeNormal() * MoveSpeed * DeltaTime, true);
+			const FVector Delta = Flat.GetSafeNormal() * MoveSpeed * DeltaTime;
+
+			FHitResult Hit;
+			AddActorWorldOffset(Delta, true, &Hit);
+
+			// 바위나 발판 모서리에 막히면 면을 따라 미끄러져 돌아간다. 멈춰 서서 쌓이지 않게.
+			if (Hit.IsValidBlockingHit())
+			{
+				FVector Slide = FVector::VectorPlaneProject(Delta, Hit.Normal) * (1.0f - Hit.Time);
+				Slide.Z = 0.0f;
+
+				if (!Slide.IsNearlyZero())
+				{
+					AddActorWorldOffset(Slide, true);
+				}
+			}
+
 			SetActorRotation(Flat.Rotation());
 		}
 		break;
@@ -255,6 +299,7 @@ void ARollBallEnemy::Tick(float DeltaTime)
 		FVector Location = GetActorLocation();
 		Location.Z -= MeteorFallSpeed * DeltaTime;
 		SetActorLocation(Location, true);
+		AddActorLocalRotation(MeteorSpin * DeltaTime);
 
 		if (Location.Z <= MeteorTargetZ.Z)
 		{

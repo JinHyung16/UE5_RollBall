@@ -241,7 +241,6 @@ bool URollBallSkillGraph::IsMaxed(int32 NodeIndex) const
 
 int32 URollBallSkillGraph::CostAtLevel(const FRollBallSkillNode& Node, int32 Level) const
 {
-
 	const double Raw = Node.Definition.BaseCost * FMath::Pow(Node.Definition.CostGrowth, static_cast<float>(Level));
 	return FMath::RoundToInt(Raw / 5.0) * 5;
 }
@@ -254,22 +253,6 @@ int32 URollBallSkillGraph::GetNextCost(int32 NodeIndex) const
 	}
 
 	return CostAtLevel(Nodes[NodeIndex], GetLevel(NodeIndex));
-}
-
-int32 URollBallSkillGraph::GetSpentGold(int32 NodeIndex) const
-{
-	if (!Nodes.IsValidIndex(NodeIndex))
-	{
-		return 0;
-	}
-
-	const int32 Level = GetLevel(NodeIndex);
-	int32 Total = 0;
-	for (int32 i = 0; i < Level; ++i)
-	{
-		Total += CostAtLevel(Nodes[NodeIndex], i);
-	}
-	return Total;
 }
 
 bool URollBallSkillGraph::IsGateOpen(int32 NodeIndex, int32 BestStage) const
@@ -538,16 +521,6 @@ FRollBallSkillStats URollBallSkillGraph::Recalculate() const
 	}
 
 	return Stats;
-}
-
-int32 URollBallSkillGraph::GetTotalSpentGold() const
-{
-	int32 Total = 0;
-	for (int32 i = 0; i < Nodes.Num(); ++i)
-	{
-		Total += GetSpentGold(i);
-	}
-	return Total;
 }
 
 void URollBallSkillGraph::ResetAllLevels()

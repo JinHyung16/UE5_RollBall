@@ -12,7 +12,6 @@ class ROLLBALL_API URollBallWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "RollBall|HUD")
 	void SetTimeText(float RemainingSeconds);
 
